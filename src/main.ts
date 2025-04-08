@@ -18,8 +18,8 @@ let runningMode = "IMAGE";
 let enableWebcamButton: HTMLButtonElement;
 let detectionActive = true;
 let webcamRunning: boolean = false;
-const videoHeight = "360px";
-const videoWidth = "480px";
+const videoHeight = "200px";
+const videoWidth = "320px";
 
 // Parámetros para Three.js
 let scene: THREE.Scene;
@@ -65,10 +65,10 @@ function animateStarAt(position: THREE.Vector3) {
   starSprite.position.copy(position);
   starSprite.scale.set(0.5, 0.5, 0.5);
   scene.add(starSprite);
-  
+
   const duration = 2000; // 2 segundos
   const startTime = performance.now();
-  
+
   function animate() {
     const elapsed = performance.now() - startTime;
     const t = Math.min(elapsed / duration, 1);
@@ -85,17 +85,33 @@ function animateStarAt(position: THREE.Vector3) {
   animate();
 }
 
-
 // Inicialización de la escena Three.js
 function initThreeJS() {
   scene = new THREE.Scene();
 
-  // Cargar imagen de fondo (puedes usar una imagen en lugar del star field)
-  const loader = new THREE.TextureLoader();
-  loader.load("public/fondo.jpg", (texture) => {
-    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    scene.background = texture;
+  const video = document.createElement("video");
+  video.src = "public/LA-NOCHE-DE-LAS-ESTRELLA-02.mp4";
+  video.loop = true;
+  video.muted = true;
+  video.playsInline = true; // para dispositivos móviles
+  video.play();
+
+  // Crear una textura a partir del video
+  const videoTexture = new THREE.VideoTexture(video);
+  videoTexture.minFilter = THREE.LinearFilter;
+  videoTexture.magFilter = THREE.LinearFilter;
+  scene.background = videoTexture;
+
+  // Crear el overlay de oscurecimiento para el fondo
+  const darkOverlayGeometry = new THREE.PlaneGeometry(150, 150);
+  const darkOverlayMaterial = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    opacity: 0.5,
+    transparent: true,
   });
+  const darkOverlay = new THREE.Mesh(darkOverlayGeometry, darkOverlayMaterial);
+  darkOverlay.position.set(0, 0, -49);
+  scene.add(darkOverlay);
 
   camera = new THREE.PerspectiveCamera(
     75,
@@ -111,32 +127,18 @@ function initThreeJS() {
   document.getElementById("three-container")!.appendChild(renderer.domElement);
 
   // Obtener elementos del modal
-  const signatureButton = document.getElementById(
-    "signatureButton"
-  ) as HTMLButtonElement;
-  const signatureModal = document.getElementById(
-    "signatureModal"
-  ) as HTMLDivElement;
-  const signatureSubmit = document.getElementById(
-    "signatureSubmit"
-  ) as HTMLButtonElement;
-  const signatureClose = document.getElementById(
-    "signatureClose"
-  ) as HTMLButtonElement;
-  const signatureInput = document.getElementById(
-    "signatureInput"
-  ) as HTMLTextAreaElement;
+  const signatureButton = document.getElementById("signatureButton") as HTMLButtonElement;
+  const signatureModal = document.getElementById("signatureModal") as HTMLDivElement;
+  const signatureSubmit = document.getElementById("signatureSubmit") as HTMLButtonElement;
+  const signatureClose = document.getElementById("signatureClose") as HTMLButtonElement;
+  const signatureInput = document.getElementById("signatureInput") as HTMLTextAreaElement;
 
-  // Muestra el modal al pulsar "Deja tu huella"
   signatureButton.addEventListener("click", () => {
     signatureModal.classList.remove("hidden");
   });
-
-  // Cierra el modal
   signatureClose.addEventListener("click", () => {
     signatureModal.classList.add("hidden");
   });
-
   signatureSubmit.addEventListener("click", () => {
     const mensaje = signatureInput.value.trim();
     if (!mensaje) {
@@ -146,35 +148,28 @@ function initThreeJS() {
     console.log("Mensaje recibido:", mensaje);
     signatureModal.classList.add("hidden");
     signatureInput.value = "";
-    
-    // Detener la detección
+    const audio3 = new Audio("public/Estrellas-3.mp3");
+    audio3.play().catch((error) => {
+      console.log("La reproducción del audio Estrellas-3 fue bloqueada: ", error);
+    });
     detectionActive = false;
     webcamRunning = false;
-    
-    // Detener el stream de la cámara
     const stream = video.srcObject as MediaStream;
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
     }
-    
-    // Limpiar el grupo de landmarks (si existe)
     if (poseGroup) {
       poseGroup.clear();
     }
-    
-    // Ejecutar la animación de la estrella en el centro
     animateStarAt(new THREE.Vector3(0, 0, 0));
   });
-  
 
-
-  // Grupo para los objetos de la pose (se mostrará sobre el fondo)
   poseGroup = new THREE.Group();
   poseGroup.renderOrder = 1;
   scene.add(poseGroup);
-}
+};
 
-// Creamos el poseLandmarker
+// Creamos el poseLandmarker; esta función se invocará cuando el usuario presione "Comenzar"
 const createPoseLandmarker = async () => {
   const vision = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
@@ -188,51 +183,70 @@ const createPoseLandmarker = async () => {
     runningMode: runningMode,
     numPoses: 2,
   });
+  console.log("Termino de cargar, mostrando modelo");
+  // No ocultamos el loadingScreen aquí, lo haremos cuando el video esté listo
   demosSection!.classList.remove("invisible");
 };
-createPoseLandmarker();
 
 // Configuración de la webcam y elementos de la interfaz
 const video = document.getElementById("webcam") as HTMLVideoElement;
-const canvasElement = document.getElementById(
-  "output_canvas"
-) as HTMLCanvasElement;
+const canvasElement = document.getElementById("output_canvas") as HTMLCanvasElement;
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
 
 // Control de overlays
-const welcomeScreen = document.getElementById(
-  "welcomeScreen"
-) as HTMLDivElement;
-const instructionScreen = document.getElementById(
-  "instructionScreen"
-) as HTMLDivElement;
+const welcomeScreen = document.getElementById("welcomeScreen") as HTMLDivElement;
+const instructionScreen = document.getElementById("instructionScreen") as HTMLDivElement;
 const startButton = document.getElementById("startButton") as HTMLButtonElement;
 
-// Inicia la pantalla de bienvenida
-startButton.addEventListener("click", () => {
-  // Ocultamos la pantalla de bienvenida y mostramos la de instrucciones
+// REPRODUCIR AUDIO EN LA PRIMERA PANTALLA
+if (welcomeScreen) {
+  const audio = new Audio("public/Estrellas-1.mp3");
+  audio.play().catch((error) => {
+    console.log("Autoplay del audio fue bloqueado: ", error);
+  });
+}
+
+// Maneja el flujo de la pantalla de bienvenida
+startButton.addEventListener("click", async () => {
   welcomeScreen.classList.add("hidden");
   instructionScreen.classList.remove("hidden");
-
-  // Tras 3 segundos, se ocultan las instrucciones y se activa la cámara
-  setTimeout(() => {
+  const audio2 = new Audio("public/Estrellas-2.mp3");
+  audio2.play().catch((error) => {
+    console.log("Autoplay del audio Estrellas-2 fue bloqueado: ", error);
+  });
+  setTimeout(async () => {
     instructionScreen.classList.add("hidden");
+    // Mostrar la pantalla de carga; en el HTML loadingScreen debe estar visible (sin la clase "hidden")
+    const loadingScreen = document.getElementById("loadingScreen");
+    if (loadingScreen) {
+      loadingScreen.classList.remove("hidden");
+    }
+    await createPoseLandmarker();
     startCamera();
-  }, 3000);
+  }, 11000);
 });
 
 function startCamera() {
   if (hasGetUserMedia()) {
-    enableWebcamButton = document.getElementById(
-      "webcamButton"
-    ) as HTMLButtonElement;
-    // En este ejemplo puedes ocultar el botón o activarlo según tu flujo
+    enableWebcamButton = document.getElementById("webcamButton") as HTMLButtonElement;
     enableWebcamButton.innerText = "DISABLE PREDICTIONS";
     webcamRunning = true;
+    const bgAudio = new Audio("public/melody-back.mp3");
+    bgAudio.loop = true;
+    bgAudio.play().catch((error) => {
+      console.log("La reproducción del audio de fondo fue bloqueada: ", error);
+    });
     const constraints = { video: true };
     navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
       video.srcObject = stream;
-      video.addEventListener("loadeddata", predictWebcam);
+      // Cuando el video cargue sus datos, ocultamos el loadingScreen y comenzamos la detección
+      video.addEventListener("loadeddata", () => {
+        const loadingScreen = document.getElementById("loadingScreen");
+        if (loadingScreen) {
+          loadingScreen.classList.add("hidden");
+        }
+        predictWebcam();
+      });
     });
   } else {
     console.warn("getUserMedia() is not supported by your browser");
@@ -245,18 +259,14 @@ async function predictWebcam() {
   if (!scene) {
     initThreeJS();
   }
-
   if (!detectionActive) return;
-
   canvasElement.style.display = "none";
   video.style.height = videoHeight;
   video.style.width = videoWidth;
-
   if (runningMode === "IMAGE") {
     runningMode = "VIDEO";
     await poseLandmarker!.setOptions({ runningMode: "VIDEO" });
   }
-
   const oscFactor = 1 + 0.1 * Math.sin(performance.now() / 200);
   const startTimeMs = performance.now();
   if (lastVideoTime !== video.currentTime) {
@@ -287,7 +297,6 @@ async function predictWebcam() {
           });
           const pointsObj = new THREE.Points(pointsGeometry, pointsMaterial);
           poseGroup.add(pointsObj);
-
           const spriteMaterial = new THREE.SpriteMaterial({
             map: glowTexture,
             blending: THREE.AdditiveBlending,
@@ -304,7 +313,6 @@ async function predictWebcam() {
             sprite.position.set((pt.x - 0.5) * 2, -(pt.y - 0.5) * 2, -pt.z);
             poseGroup.add(sprite);
           }
-
           const connections = PoseLandmarker.POSE_CONNECTIONS;
           for (const connection of connections) {
             const startIndex = connection.start;
@@ -322,45 +330,23 @@ async function predictWebcam() {
                 -(endPt.y - 0.5) * 2,
                 -endPt.z
               );
-              const lineGeom = new THREE.BufferGeometry().setFromPoints([
-                v1,
-                v2,
-              ]);
+              const lineGeom = new THREE.BufferGeometry().setFromPoints([v1, v2]);
               const line = new THREE.Line(lineGeom, connectionMaterial);
               poseGroup.add(line);
-
-              const center = new THREE.Vector3()
-                .addVectors(v1, v2)
-                .multiplyScalar(0.5);
+              const center = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
               const baseScale = 1.5;
               const lineScale = baseScale * oscFactor;
-              const auraV1 = new THREE.Vector3()
-                .subVectors(v1, center)
-                .multiplyScalar(lineScale)
-                .add(center);
-              const auraV2 = new THREE.Vector3()
-                .subVectors(v2, center)
-                .multiplyScalar(lineScale)
-                .add(center);
+              const auraV1 = new THREE.Vector3().subVectors(v1, center).multiplyScalar(lineScale).add(center);
+              const auraV2 = new THREE.Vector3().subVectors(v2, center).multiplyScalar(lineScale).add(center);
               const auraLineGeom = new LineGeometry();
-              auraLineGeom.setPositions([
-                auraV1.x,
-                auraV1.y,
-                auraV1.z,
-                auraV2.x,
-                auraV2.y,
-                auraV2.z,
-              ]);
+              auraLineGeom.setPositions([auraV1.x, auraV1.y, auraV1.z, auraV2.x, auraV2.y, auraV2.z]);
               const auraLineMaterial = new LineMaterial({
                 color: 0xffff00,
                 transparent: true,
                 opacity: 0.3,
                 linewidth: 10,
               });
-              auraLineMaterial.resolution.set(
-                window.innerWidth,
-                window.innerHeight
-              );
+              auraLineMaterial.resolution.set(window.innerWidth, window.innerHeight);
               const auraLine = new Line2(auraLineGeom, auraLineMaterial);
               poseGroup.add(auraLine);
             }
@@ -370,7 +356,6 @@ async function predictWebcam() {
       }
     );
   }
-
   if (webcamRunning) {
     window.requestAnimationFrame(predictWebcam);
   }
