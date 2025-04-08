@@ -9,7 +9,7 @@ import { EffectComposer, RenderPass } from "three/examples/jsm/Addons.js";
 
 // Firebase (si lo usas localmente)
 import { saveMessage } from "./firebaseMessages";
-import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 
 // Referencias a elementos del DOM
