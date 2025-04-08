@@ -89,6 +89,48 @@ footer {
   z-index: 0;
 }
 
+/* Caja donde se muestra el mensaje tras la animación */
+#msgBox {
+  position: fixed; /* Para que se ubique sobre todo */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 600px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 1.4rem;
+  text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  z-index: 9999; /* Sobre la escena */
+  pointer-events: auto; /* Para que sea clickeable por dentro, si tuviera botones */
+}
+
+/* Botón de reset */
+#resetButton {
+  position: fixed; /* similar a msgBox, centrado */
+  top: calc(50% + 120px); /* un poco debajo del #msgBox */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  font-size: 1.2rem;
+  background-color: #1e90ff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+/* Mantén la clase hidden para ocultarlos hasta que sea necesario */
+.hidden {
+  display: none;
+}
+
 
 
 .output_canvas {
