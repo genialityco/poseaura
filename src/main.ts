@@ -144,93 +144,121 @@ const glowTexture = createGlowTexture();
 // AJUSTE 2: Cambiar renderer.render(...) por composer.render() en animate()
 // -----------------------------------------------------------------------
 function animateStarAt(position: THREE.Vector3) {
+  // Material y sprite grandes (para ver la estrella con la cámara alejada)
   const starMaterial = new THREE.SpriteMaterial({
-    map: glowTexture,
+    map: glowTexture,    // Reemplaza glowTexture por tu textura radial
     transparent: true,
     opacity: 1,
+    blending: THREE.AdditiveBlending, // opcional, da efecto "glow"
   });
   const starSprite = new THREE.Sprite(starMaterial);
+  // Empieza en 'position' con escala inicial 30
   starSprite.position.copy(position);
-  starSprite.scale.set(0.5, 0.5, 0.5);
+  starSprite.scale.set(30, 30, 30);
   scene.add(starSprite);
 
-  const totalDuration = 12000; // 12 segundos
-  // Dividimos en 3 fases
+  // Duración total y proporciones de cada fase
+  const totalDuration = 12000; // 12s totales
   const phase1Ratio = 0.3;
   const phase2Ratio = 0.4;
   const phase3Ratio = 0.3;
+
   const startTime = performance.now();
   const origin = position.clone();
 
-  const moveRadiusX = 1.5;
-  const moveRadiusY = 1.0;
-  const totalRotationDuringPhase2 = 4 * Math.PI;
+  // Parámetros para fase 2 (órbita)
+  const revolveRadius = 50;     // radio de la órbita
+  const revolveSpeed = 2 * Math.PI * 2; // 2 órbitas completas en la fase 2
 
   function animate() {
     const elapsed = performance.now() - startTime;
     const tTotal = Math.min(elapsed / totalDuration, 1);
 
     if (tTotal < phase1Ratio) {
-      // Expansión Inicial
-      const tPhase1 = tTotal / phase1Ratio;
-      const easeOut = 1 - Math.pow(1 - tPhase1, 3);
-      const scale = 0.5 + easeOut * 2.5;
+      //----------------------------------------------------------------
+      // FASE 1: Crece en el centro de escala 30 a ~180
+      //----------------------------------------------------------------
+      const t1 = tTotal / phase1Ratio; 
+      const scale = 30 + 150 * t1; // 30 -> 180
       starSprite.scale.set(scale, scale, scale);
+
+      // Permanecemos en el origin
       starSprite.position.copy(origin);
+
+      // Opacidad completa
       starMaterial.opacity = 1;
-      starSprite.rotation.x += easeOut * 0.05;
-      starSprite.rotation.y += easeOut * 0.05;
-      starSprite.rotation.z += easeOut * 0.05;
+
+      // Leve rotación
+      starSprite.rotation.x += 0.02;
+      starSprite.rotation.y += 0.02;
+      starSprite.rotation.z += 0.02;
+
     } else if (tTotal < phase1Ratio + phase2Ratio) {
-      // Órbita + pulsación
-      const tPhase2 = (tTotal - phase1Ratio) / phase2Ratio;
-      const angle = totalRotationDuringPhase2 * tPhase2;
+      //----------------------------------------------------------------
+      // FASE 2: Órbita con pulsación en escala + parpadeo
+      //----------------------------------------------------------------
+      const t2 = (tTotal - phase1Ratio) / phase2Ratio;
+
+      // Órbita alrededor del origin
+      const angle = revolveSpeed * t2;
       starSprite.position.set(
-        origin.x + moveRadiusX * Math.cos(angle),
-        origin.y + moveRadiusY * Math.sin(angle),
+        origin.x + revolveRadius * Math.cos(angle),
+        origin.y + revolveRadius * Math.sin(angle),
         origin.z
       );
-      const baseScale = 3.0; // 0.5 + 2.5
-      const pulsation = 1 + 0.05 * Math.sin(8 * Math.PI * tPhase2);
-      starSprite.scale.set(
-        baseScale * pulsation,
-        baseScale * pulsation,
-        baseScale * pulsation
-      );
 
+      // Escala base ~180 con una pequeña oscilación +-20
+      const scaleBase = 180;
+      const scaleOsc = 20;
+      // Oscilamos 5 ciclos en la fase 2
+      const s = scaleBase + scaleOsc * Math.sin(5 * 2 * Math.PI * t2);
+      starSprite.scale.set(s, s, s);
+
+      // Rotación más rápida
       starSprite.rotation.x += 0.05;
       starSprite.rotation.y += 0.05;
       starSprite.rotation.z += 0.05;
 
-      const blink = 0.5 + 0.5 * Math.abs(Math.sin(4 * Math.PI * tPhase2));
-      starMaterial.opacity = tPhase2 < 0.5 ? 1 : blink;
+      // Parpadeo
+      const blink = 0.5 + 0.5 * Math.abs(Math.sin(4 * Math.PI * t2));
+      starMaterial.opacity = blink;
+
     } else {
-      // Subida y desvanecimiento
-      const tPhase3 = (tTotal - phase1Ratio - phase2Ratio) / phase3Ratio;
-      const exitOffsetY = 2.0;
-      starSprite.position.y += exitOffsetY * tPhase3;
+      //----------------------------------------------------------------
+      // FASE 3: Deja de orbitar, sube y se desvanece hasta desaparecer
+      //----------------------------------------------------------------
+      const t3 = (tTotal - (phase1Ratio + phase2Ratio)) / phase3Ratio;
+
+      // Reducimos la escala desde la que tenga en fase 2 hasta 0
+      const currentScale = starSprite.scale.x; // Escala actual que viene de la fase 2
+      const newScale = currentScale * (1 - t3);
+      starSprite.scale.set(newScale, newScale, newScale);
+
+      // Movemos la estrella hacia arriba a razón de ~1.5 unidades por frame
+      // (ajusta a tu gusto)
+      starSprite.position.y += 1.5;
+
       starSprite.rotation.x += 0.1;
       starSprite.rotation.y += 0.1;
       starSprite.rotation.z += 0.1;
-      starMaterial.opacity = 1 - tPhase3;
+
+      // Se desvanece de 1 a 0
+      starMaterial.opacity = 1 - t3;
     }
 
-    // En vez de renderer.render(scene, camera), ahora:
+    // Renderizamos con post-procesado
     composer.render();
 
     if (tTotal < 1) {
       requestAnimationFrame(animate);
     } else {
+      // Fase final: remover sprite y disparar audio
       scene.remove(starSprite);
-      // Reproducimos audio final
       const audio4 = new Audio("/Estrellas-4.mp3");
       audio4.play().catch((error) => {
-        console.log(
-          "La reproducción del audio Estrellas-4 fue bloqueada:",
-          error
-        );
+        console.log("La reproducción del audio Estrellas-4 fue bloqueada:", error);
       });
-      // Pequeña pausa y recargamos
+      // Si quieres recargar tras 0.5s
       setTimeout(() => {
         window.location.reload();
       }, 500);
@@ -239,6 +267,7 @@ function animateStarAt(position: THREE.Vector3) {
 
   animate();
 }
+
 
 /**
  * Inicializa la escena de Three.js con la configuración de partículas
@@ -300,25 +329,30 @@ async function initThreeJS() {
       uniform float time;
       varying vec3 vColor;
       void main() {
-        vColor = vec3(0.0, 1.0, 1.0);
+        // Color base un poco más brillante
+        vColor = vec3(0.9, 0.9, 1.0);
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        // Escalado de tamaño de punto con la distancia
-        gl_PointSize = 5.0 * (300.0 / -mvPosition.z);
+        // Aumentamos el tamaño base de 5.0 a 15.0
+        gl_PointSize = 15.0 * (300.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
     fragmentShader: `
       varying vec3 vColor;
       void main() {
+        // Calculamos la distancia al centro del sprite
         float dist = length(gl_PointCoord - vec2(0.5));
+        // Ajusta 'smoothstep' a tu gusto para un contorno más definido
         float glow = 1.0 - smoothstep(0.2, 0.5, dist);
-        gl_FragColor = vec4(vColor, glow * 0.5);
+        // Subimos de 0.5 a 0.8 para más opacidad
+        gl_FragColor = vec4(vColor, glow * 0.8);
       }
     `,
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
+  
 
   points = new THREE.Points(geometry, auraMaterial);
   scene.add(points);
@@ -338,9 +372,11 @@ async function initThreeJS() {
       uniform float time;
       varying vec3 vColor;
       void main() {
-        vColor = vec3(1.0, 0.5, 0.0); // naranja
+        // Subimos color y tamaño
+        vColor = vec3(1.0, 0.6, 0.0); // naranja más claro
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = 10.0 * (300.0 / -mvPosition.z);
+        // Antes era 10.0, lo subimos a 20.0
+        gl_PointSize = 20.0 * (300.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -349,13 +385,15 @@ async function initThreeJS() {
       void main() {
         float dist = length(gl_PointCoord - vec2(0.5));
         float glow = 1.0 - smoothstep(0.2, 0.5, dist);
-        gl_FragColor = vec4(vColor, glow);
+        // Un poco más de opacidad
+        gl_FragColor = vec4(vColor, glow * 0.9);
       }
     `,
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
+  
   emitterPoints = new THREE.Points(emitterGeometry, emitterMaterial);
   scene.add(emitterPoints);
 
@@ -375,9 +413,11 @@ async function initThreeJS() {
       uniform float time;
       varying vec3 vColor;
       void main() {
-        vColor = vec3(0.5, 0.5, 1.0); // un color suave
+        // Color base un poco más claro
+        vColor = vec3(0.6, 0.6, 1.0);
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = 3.0 * (300.0 / -mvPosition.z);
+        // De 3.0 a 8.0 para que sea más notorio
+        gl_PointSize = 8.0 * (300.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -386,13 +426,15 @@ async function initThreeJS() {
       void main() {
         float dist = length(gl_PointCoord - vec2(0.5));
         float glow = 1.0 - smoothstep(0.2, 0.5, dist);
-        gl_FragColor = vec4(vColor, glow * 0.8);
+        // Aumentamos un poco la opacidad
+        gl_FragColor = vec4(vColor, glow * 0.9);
       }
     `,
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
+  
   streamPoints = new THREE.Points(streamGeometry, streamMaterial);
   scene.add(streamPoints);
 
