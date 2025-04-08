@@ -6,6 +6,7 @@ import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { saveMessage } from "./firebaseMessages";
 
 const demosSection = document.getElementById("demos");
 
@@ -185,13 +186,14 @@ function initThreeJS() {
   signatureClose.addEventListener("click", () => {
     signatureModal.classList.add("hidden");
   });
-  signatureSubmit.addEventListener("click", () => {
+  signatureSubmit.addEventListener("click", async () => {
     const mensaje = signatureInput.value.trim();
     if (!mensaje) {
       alert("Por favor ingresa un mensaje antes de enviar.");
       return;
     }
     console.log("Mensaje recibido:", mensaje);
+    await saveMessage(mensaje);
     signatureModal.classList.add("hidden");
     signatureInput.value = "";
     const audio3 = new Audio("/Estrellas-3.mp3");
