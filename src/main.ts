@@ -1,10 +1,7 @@
 import "./style.css";
 import * as THREE from "three";
 
-import {
-  PoseLandmarker,
-  FilesetResolver,
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
@@ -12,8 +9,10 @@ import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
 const demosSection = document.getElementById("demos");
 
+type RunningMode = "IMAGE" | "VIDEO";
+
 // Variables de la detección de pose
-let poseLandmarker: PoseLandmarker = undefined;
+let poseLandmarker!: PoseLandmarker;
 let runningMode = "IMAGE";
 let enableWebcamButton: HTMLButtonElement;
 let detectionActive = true;
@@ -180,7 +179,7 @@ const createPoseLandmarker = async () => {
         "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
       delegate: "GPU",
     },
-    runningMode: runningMode,
+    runningMode: runningMode as RunningMode,
     numPoses: 2,
   });
   console.log("Termino de cargar, mostrando modelo");
