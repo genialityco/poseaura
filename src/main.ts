@@ -65,52 +65,89 @@ function animateStarAt(position: THREE.Vector3) {
   starSprite.scale.set(0.5, 0.5, 0.5);
   scene.add(starSprite);
 
-  const duration = 2000; // 2 segundos
+  const totalDuration = 12000;
+
+  // Dividimos la animación en 3 fases:
+  const phase1Ratio = 0.3;
+  const phase2Ratio = 0.4;
+  const phase3Ratio = 0.3;
   const startTime = performance.now();
+  const origin = position.clone();
+
+  // Movimiento
+  const moveRadiusX = 1.5;
+  const moveRadiusY = 1.0; 
+  const totalRotationDuringPhase2 = 4 * Math.PI; 
 
   function animate() {
     const elapsed = performance.now() - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    const scale = 0.5 + t * 1.5;
-    starSprite.scale.set(scale, scale, scale);
-    starMaterial.opacity = 1 - t;
-    renderer.render(scene, camera); // Actualiza la escena
-    if (t < 1) {
+    const tTotal = Math.min(elapsed / totalDuration, 1);
+
+    if (tTotal < phase1Ratio) {
+      //Expansión Inicial
+      const tPhase1 = tTotal / phase1Ratio;
+      const easeOut = 1 - Math.pow(1 - tPhase1, 3);
+      const scale = 0.5 + easeOut * 2.5;
+      starSprite.scale.set(scale, scale, scale);
+      starSprite.position.copy(origin);
+      starMaterial.opacity = 1;
+      starSprite.rotation.x += easeOut * 0.05;
+      starSprite.rotation.y += easeOut * 0.05;
+      starSprite.rotation.z += easeOut * 0.05;
+    } else if (tTotal < phase1Ratio + phase2Ratio) {
+      const tPhase2 = (tTotal - phase1Ratio) / phase2Ratio;
+      const angle = totalRotationDuringPhase2 * tPhase2;
+      starSprite.position.set(
+        origin.x + moveRadiusX * Math.cos(angle),
+        origin.y + moveRadiusY * Math.sin(angle),
+        origin.z
+      );
+      const baseScale = 0.5 + 2.5;
+      const pulsation = 1 + 0.05 * Math.sin(8 * Math.PI * tPhase2);
+      starSprite.scale.set(
+        baseScale * pulsation,
+        baseScale * pulsation,
+        baseScale * pulsation
+      );
+      starSprite.rotation.x += 0.05;
+      starSprite.rotation.y += 0.05;
+      starSprite.rotation.z += 0.05;
+
+      const blink = 0.5 + 0.5 * Math.abs(Math.sin(4 * Math.PI * tPhase2));
+      starMaterial.opacity = tPhase2 < 0.5 ? 1 : blink;
+    } else {
+      const tPhase3 = (tTotal - phase1Ratio - phase2Ratio) / phase3Ratio;
+      const exitOffsetY = 2.0;
+      starSprite.position.y += exitOffsetY * tPhase3;
+      starSprite.rotation.x += 0.1;
+      starSprite.rotation.y += 0.1;
+      starSprite.rotation.z += 0.1;
+
+      starMaterial.opacity = 1 - tPhase3;
+    }
+
+    renderer.render(scene, camera);
+
+    if (tTotal < 1) {
       requestAnimationFrame(animate);
     } else {
       scene.remove(starSprite);
+      const audio4 = new Audio("/Estrellas-4.mp3");
+      audio4.play().catch((error) => {
+        console.log("La reproducción del audio Estrellas-4 fue bloqueada:", error);
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     }
   }
   animate();
 }
 
+
 // Inicialización de la escena Three.js
 function initThreeJS() {
   scene = new THREE.Scene();
-
-  const video = document.createElement("video");
-  video.src = "/LA-NOCHE-DE-LAS-ESTRELLA-02.mp4";
-  video.loop = true;
-  video.muted = true;
-  video.playsInline = true; // para dispositivos móviles
-  video.play();
-
-  // Crear una textura a partir del video
-  const videoTexture = new THREE.VideoTexture(video);
-  videoTexture.minFilter = THREE.LinearFilter;
-  videoTexture.magFilter = THREE.LinearFilter;
-  scene.background = videoTexture;
-
-  // Crear el overlay de oscurecimiento para el fondo
-  const darkOverlayGeometry = new THREE.PlaneGeometry(150, 150);
-  const darkOverlayMaterial = new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    opacity: 0.5,
-    transparent: true,
-  });
-  const darkOverlay = new THREE.Mesh(darkOverlayGeometry, darkOverlayMaterial);
-  darkOverlay.position.set(0, 0, -49);
-  scene.add(darkOverlay);
 
   camera = new THREE.PerspectiveCamera(
     75,
@@ -126,11 +163,21 @@ function initThreeJS() {
   document.getElementById("three-container")!.appendChild(renderer.domElement);
 
   // Obtener elementos del modal
-  const signatureButton = document.getElementById("signatureButton") as HTMLButtonElement;
-  const signatureModal = document.getElementById("signatureModal") as HTMLDivElement;
-  const signatureSubmit = document.getElementById("signatureSubmit") as HTMLButtonElement;
-  const signatureClose = document.getElementById("signatureClose") as HTMLButtonElement;
-  const signatureInput = document.getElementById("signatureInput") as HTMLTextAreaElement;
+  const signatureButton = document.getElementById(
+    "signatureButton"
+  ) as HTMLButtonElement;
+  const signatureModal = document.getElementById(
+    "signatureModal"
+  ) as HTMLDivElement;
+  const signatureSubmit = document.getElementById(
+    "signatureSubmit"
+  ) as HTMLButtonElement;
+  const signatureClose = document.getElementById(
+    "signatureClose"
+  ) as HTMLButtonElement;
+  const signatureInput = document.getElementById(
+    "signatureInput"
+  ) as HTMLTextAreaElement;
 
   signatureButton.addEventListener("click", () => {
     signatureModal.classList.remove("hidden");
@@ -149,7 +196,10 @@ function initThreeJS() {
     signatureInput.value = "";
     const audio3 = new Audio("/Estrellas-3.mp3");
     audio3.play().catch((error) => {
-      console.log("La reproducción del audio Estrellas-3 fue bloqueada: ", error);
+      console.log(
+        "La reproducción del audio Estrellas-3 fue bloqueada: ",
+        error
+      );
     });
     detectionActive = false;
     webcamRunning = false;
@@ -166,9 +216,9 @@ function initThreeJS() {
   poseGroup = new THREE.Group();
   poseGroup.renderOrder = 1;
   scene.add(poseGroup);
-};
+}
 
-// Creamos el poseLandmarker; esta función se invocará cuando el usuario presione "Comenzar"
+// Creamos el poseLandmarker esta función se ejecuta cuando el usuario presione "Comenzar"
 const createPoseLandmarker = async () => {
   const vision = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
@@ -183,18 +233,23 @@ const createPoseLandmarker = async () => {
     numPoses: 2,
   });
   console.log("Termino de cargar, mostrando modelo");
-  // No ocultamos el loadingScreen aquí, lo haremos cuando el video esté listo
   demosSection!.classList.remove("invisible");
 };
 
 // Configuración de la webcam y elementos de la interfaz
 const video = document.getElementById("webcam") as HTMLVideoElement;
-const canvasElement = document.getElementById("output_canvas") as HTMLCanvasElement;
+const canvasElement = document.getElementById(
+  "output_canvas"
+) as HTMLCanvasElement;
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
 
 // Control de overlays
-const welcomeScreen = document.getElementById("welcomeScreen") as HTMLDivElement;
-const instructionScreen = document.getElementById("instructionScreen") as HTMLDivElement;
+const welcomeScreen = document.getElementById(
+  "welcomeScreen"
+) as HTMLDivElement;
+const instructionScreen = document.getElementById(
+  "instructionScreen"
+) as HTMLDivElement;
 const startButton = document.getElementById("startButton") as HTMLButtonElement;
 
 // REPRODUCIR AUDIO EN LA PRIMERA PANTALLA
@@ -215,7 +270,6 @@ startButton.addEventListener("click", async () => {
   });
   setTimeout(async () => {
     instructionScreen.classList.add("hidden");
-    // Mostrar la pantalla de carga; en el HTML loadingScreen debe estar visible (sin la clase "hidden")
     const loadingScreen = document.getElementById("loadingScreen");
     if (loadingScreen) {
       loadingScreen.classList.remove("hidden");
@@ -227,8 +281,10 @@ startButton.addEventListener("click", async () => {
 
 function startCamera() {
   if (hasGetUserMedia()) {
-    enableWebcamButton = document.getElementById("webcamButton") as HTMLButtonElement;
-    enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+    enableWebcamButton = document.getElementById(
+      "webcamButton"
+    ) as HTMLButtonElement;
+    enableWebcamButton.innerText = "■";
     webcamRunning = true;
     const bgAudio = new Audio("/melody-back.mp3");
     bgAudio.loop = true;
@@ -329,23 +385,44 @@ async function predictWebcam() {
                 -(endPt.y - 0.5) * 2,
                 -endPt.z
               );
-              const lineGeom = new THREE.BufferGeometry().setFromPoints([v1, v2]);
+              const lineGeom = new THREE.BufferGeometry().setFromPoints([
+                v1,
+                v2,
+              ]);
               const line = new THREE.Line(lineGeom, connectionMaterial);
               poseGroup.add(line);
-              const center = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
+              const center = new THREE.Vector3()
+                .addVectors(v1, v2)
+                .multiplyScalar(0.5);
               const baseScale = 1.5;
               const lineScale = baseScale * oscFactor;
-              const auraV1 = new THREE.Vector3().subVectors(v1, center).multiplyScalar(lineScale).add(center);
-              const auraV2 = new THREE.Vector3().subVectors(v2, center).multiplyScalar(lineScale).add(center);
+              const auraV1 = new THREE.Vector3()
+                .subVectors(v1, center)
+                .multiplyScalar(lineScale)
+                .add(center);
+              const auraV2 = new THREE.Vector3()
+                .subVectors(v2, center)
+                .multiplyScalar(lineScale)
+                .add(center);
               const auraLineGeom = new LineGeometry();
-              auraLineGeom.setPositions([auraV1.x, auraV1.y, auraV1.z, auraV2.x, auraV2.y, auraV2.z]);
+              auraLineGeom.setPositions([
+                auraV1.x,
+                auraV1.y,
+                auraV1.z,
+                auraV2.x,
+                auraV2.y,
+                auraV2.z,
+              ]);
               const auraLineMaterial = new LineMaterial({
                 color: 0xffff00,
                 transparent: true,
                 opacity: 0.3,
                 linewidth: 10,
               });
-              auraLineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+              auraLineMaterial.resolution.set(
+                window.innerWidth,
+                window.innerHeight
+              );
               const auraLine = new Line2(auraLineGeom, auraLineMaterial);
               poseGroup.add(auraLine);
             }

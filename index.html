@@ -8,6 +8,11 @@
 </head>
 
 <body>
+  <video id="globalBackgroundVideo" autoplay muted loop>
+    <source src="/LA-NOCHE-DE-LAS-ESTRELLA-02.mp4" type="video/mp4">
+    Tu navegador no soporta video en HTML5.
+  </video>
+
   <!-- Contenedor para Three.js -->
   <div id="three-container">
     <!-- Botón "Deja tu huella" superpuesto -->
@@ -15,7 +20,7 @@
   </div>
 
   <!-- Botón para controlar la cámara (puede estar oculto inicialmente o activo según tu flujo) -->
-  <button id="webcamButton">Iniciar Cámara</button>
+  <button id="webcamButton">■</button>
 
   <!-- Elementos para la cámara y canvas -->
   <video id="webcam" autoplay playsinline></video>
@@ -42,7 +47,6 @@
   </div>
 
   <!-- Overlay de carga -->
-  <!-- Overlay de carga (inicialmente oculto) -->
   <div id="loadingScreen" class="overlay hidden">
     <div class="text">
       <p>Analizando tu energía interior...</p>
