@@ -164,7 +164,7 @@ footer {
   left: 0;
   width: 100%;
   height: 100%;
-  background: url('public/HOME-LA-NOCHE-DE-LAS-ESTRELLAS.png') no-repeat center center;
+  background: url('/HOME-LA-NOCHE-DE-LAS-ESTRELLAS.png') no-repeat center center;
   background-size: cover;
   background-color: rgba(0, 0, 0, 0.5);
   background-blend-mode: overlay;

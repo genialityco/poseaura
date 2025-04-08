@@ -89,7 +89,7 @@ function initThreeJS() {
   scene = new THREE.Scene();
 
   const video = document.createElement("video");
-  video.src = "public/LA-NOCHE-DE-LAS-ESTRELLA-02.mp4";
+  video.src = "/LA-NOCHE-DE-LAS-ESTRELLA-02.mp4";
   video.loop = true;
   video.muted = true;
   video.playsInline = true; // para dispositivos móviles
@@ -147,7 +147,7 @@ function initThreeJS() {
     console.log("Mensaje recibido:", mensaje);
     signatureModal.classList.add("hidden");
     signatureInput.value = "";
-    const audio3 = new Audio("public/Estrellas-3.mp3");
+    const audio3 = new Audio("/Estrellas-3.mp3");
     audio3.play().catch((error) => {
       console.log("La reproducción del audio Estrellas-3 fue bloqueada: ", error);
     });
@@ -199,7 +199,7 @@ const startButton = document.getElementById("startButton") as HTMLButtonElement;
 
 // REPRODUCIR AUDIO EN LA PRIMERA PANTALLA
 if (welcomeScreen) {
-  const audio = new Audio("public/Estrellas-1.mp3");
+  const audio = new Audio("/Estrellas-1.mp3");
   audio.play().catch((error) => {
     console.log("Autoplay del audio fue bloqueado: ", error);
   });
@@ -209,7 +209,7 @@ if (welcomeScreen) {
 startButton.addEventListener("click", async () => {
   welcomeScreen.classList.add("hidden");
   instructionScreen.classList.remove("hidden");
-  const audio2 = new Audio("public/Estrellas-2.mp3");
+  const audio2 = new Audio("/Estrellas-2.mp3");
   audio2.play().catch((error) => {
     console.log("Autoplay del audio Estrellas-2 fue bloqueado: ", error);
   });
@@ -230,7 +230,7 @@ function startCamera() {
     enableWebcamButton = document.getElementById("webcamButton") as HTMLButtonElement;
     enableWebcamButton.innerText = "DISABLE PREDICTIONS";
     webcamRunning = true;
-    const bgAudio = new Audio("public/melody-back.mp3");
+    const bgAudio = new Audio("/melody-back.mp3");
     bgAudio.loop = true;
     bgAudio.play().catch((error) => {
       console.log("La reproducción del audio de fondo fue bloqueada: ", error);
