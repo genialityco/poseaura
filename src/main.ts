@@ -151,7 +151,7 @@ startButton.addEventListener("click", async () => {
 
     // Una vez listo, escuchamos en Firebase
     listenForFlowState();
-  }, 11000);
+  }, 6000);
 });
 
 // ----------------------------------------------------------------------
