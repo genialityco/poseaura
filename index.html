@@ -22,9 +22,13 @@
   <!-- Botón para controlar la cámara (puede estar oculto inicialmente o activo según tu flujo) -->
   <button id="webcamButton">■</button>
 
+
   <!-- Elementos para la cámara y canvas -->
   <video id="webcam" autoplay playsinline></video>
   <canvas id="output_canvas"></canvas>
+
+  <video id="webcam" autoplay muted playsinline></video>
+  <canvas id="webgl"></canvas>
 
   <!-- Overlay para la pantalla de bienvenida -->
   <div id="welcomeScreen" class="overlay">
@@ -47,11 +51,11 @@
   </div>
 
   <!-- Overlay de carga -->
-  <div id="loadingScreen" class="overlay hidden">
+  <!-- <div id="loadingScreen" class="overlay hidden">
     <div class="text">
       <p>Analizando tu energía interior...</p>
     </div>
-  </div>
+  </div> -->
 
 
   <!-- Modal para ingresar el mensaje -->
@@ -72,6 +76,7 @@
 
   <!-- Elemento opcional (para demos o mensajes extra) -->
   <div id="demos"></div>
+
 
   <script type="module" src="/src/main.ts"></script>
 </body>
